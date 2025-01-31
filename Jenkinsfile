@@ -20,13 +20,12 @@ pipeline {
                 script {
                     echo "Running tests in Docker container"
 
-                    // Use forward slashes for path consistency
                     def currentDir = pwd().replace('\\', '/')
 
-                    // Improved Docker command with correct variable substitution
-                    sh """
+                    // Corrected Docker command using triple single quotes and proper variable substitution
+                    sh '''
                         docker run --rm -v "${currentDir}:/app" -w /app ${DOCKER_IMAGE} pip install -r requirements.txt && pytest tests/
-                    """
+                    '''
                 }
             }
         }
