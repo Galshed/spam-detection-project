@@ -19,25 +19,19 @@ pipeline {
 
         stage('Build and Test') {
             agent {
-                docker {
-                    image "${DOCKER_IMAGE}"
-                    args '-v $PWD:/app -w /app'  // Mount workspace
-                }
+                label 'docker'  // Run this on a node with Docker installed
             }
             steps {
                 script {
-                    echo "Installing dependencies"
-                    sh 'pip install -r requirements.txt'
-
-                    echo "Running tests"
-                    sh 'pytest tests/'
+                    echo "Running tests in Docker container"
+                    sh 'docker run --rm -v $PWD:/app -w /app ${DOCKER_IMAGE} sh -c "pip install -r requirements.txt && pytest tests/"'
                 }
             }
         }
 
         stage('Build Docker Image') {
             agent {
-                label 'docker'  // Run this step on a node with Docker installed
+                label 'docker'  // Run this on a node with Docker installed
             }
             steps {
                 script {
