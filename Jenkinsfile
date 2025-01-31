@@ -22,7 +22,9 @@ pipeline {
             steps {
                 script {
                     echo "Running tests in Docker container"
-                    sh 'docker run --rm -v $PWD:/app -w /app ${DOCKER_IMAGE} sh -c "pip install -r requirements.txt && pytest tests/"'
+                    powershell '''
+                        docker run --rm -v $PWD:/app -w /app ${DOCKER_IMAGE} sh -c "pip install -r requirements.txt && pytest tests/"
+                    '''
                 }
             }
         }
@@ -32,11 +34,15 @@ pipeline {
             steps {
                 script {
                     echo "Building Docker image"
-                    sh 'docker build -t ${DOCKER_IMAGE} .'
+                    powershell '''
+                        docker build -t ${DOCKER_IMAGE} .
+                    '''
 
                     echo "Pushing Docker image to DockerHub"
                     withDockerRegistry([url: 'https://index.docker.io/v1/', credentialsId: 'docker']) {
-                        sh 'docker push ${DOCKER_IMAGE}'
+                        powershell '''
+                            docker push ${DOCKER_IMAGE}
+                        '''
                     }
                 }
             }
@@ -47,8 +53,10 @@ pipeline {
             steps {
                 script {
                     echo "Deploying to Kubernetes"
-                    sh 'kubectl apply -f k8s/deployment.yaml'
-                    sh 'kubectl apply -f k8s/service.yaml'
+                    powershell '''
+                        kubectl apply -f k8s/deployment.yaml
+                        kubectl apply -f k8s/service.yaml
+                    '''
                 }
             }
         }
