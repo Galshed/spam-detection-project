@@ -8,7 +8,7 @@ pipeline {
 
   stages {
     stage('Checkout') {
-      agent any  // Use any available agent for this stage
+      agent any  
       steps {
         script {
           echo "Cloning the repository"
@@ -19,17 +19,10 @@ pipeline {
 
     stage('Build and Test') {
       agent {
-        docker {
-          image "${DOCKER_IMAGE}"
-          args "-v ${env.WORKSPACE}:${env.WORKSPACE}"  // Ensure volume mount uses the correct absolute path
-        }
+        dockerImage "${DOCKER_IMAGE}"
       }
       steps {
         script {
-          // Normalize the path for Windows
-          def workspaceDir = "${env.WORKSPACE}".replace('\\', '/')
-          echo "Normalized workspace path: ${workspaceDir}"
-
           echo "Installing dependencies"
           sh 'pip install -r requirements.txt'
 
@@ -41,21 +34,15 @@ pipeline {
 
     stage('Build Docker Image') {
       agent {
-        docker {
-          image "${DOCKER_IMAGE}"
-          args "-v ${env.WORKSPACE}:${env.WORKSPACE}"
-        }
+        dockerImage "${DOCKER_IMAGE}"
       }
       steps {
         script {
-          def workspaceDir = "${env.WORKSPACE}".replace('\\', '/')
-          echo "Normalized workspace path for docker build: ${workspaceDir}"
-
           echo "Building Docker image"
           sh 'docker build -t ${DOCKER_IMAGE} .'
 
           echo "Pushing Docker image to registry"
-          docker.withRegistry('https://index.docker.io/v1/', 'docker') {
+          withDockerRegistry([url: 'https://index.docker.io/v1/', credentialsId: 'docker']) {
             sh 'docker push ${DOCKER_IMAGE}'
           }
         }
@@ -64,16 +51,10 @@ pipeline {
 
     stage('Deploy') {
       agent {
-        docker {
-          image "${DOCKER_IMAGE}"
-          args "-v ${env.WORKSPACE}:${env.WORKSPACE}"
-        }
+        dockerImage "${DOCKER_IMAGE}"
       }
       steps {
         script {
-          def workspaceDir = "${env.WORKSPACE}".replace('\\', '/')
-          echo "Normalized workspace path for kubectl deploy: ${workspaceDir}"
-
           echo "Deploying to Kubernetes"
           sh 'kubectl apply -f k8s/deployment.yaml'
           sh 'kubectl apply -f k8s/service.yaml'
