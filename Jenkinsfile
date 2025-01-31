@@ -11,7 +11,7 @@ pipeline {
             agent any  // Use any available agent for checkout
             steps {
                 script {
-                    echo "Cloning the repository..."
+                    echo "Cloning"
                     checkout scm  // Use SCM plugin to clone the repo
                 }
             }
@@ -23,8 +23,8 @@ pipeline {
                 script {
                     echo "Running tests in Docker container"
                     powershell """
-                        \$currentDir = (Get-Location).Path
-                        docker run --rm -v `"\$currentDir:/app`" -w /app `${env:DOCKER_IMAGE}` sh -c `"pip install -r requirements.txt && pytest tests/`"
+                        \$currentDir = (Get-Location).Path -replace '\\', '/'
+                        docker run --rm -v `"\$currentDir:/app`" -w /app $env:DOCKER_IMAGE sh -c `"pip install -r requirements.txt; pytest tests/`"
                     """
                 }
             }
@@ -36,13 +36,13 @@ pipeline {
                 script {
                     echo "Building Docker image"
                     powershell """
-                        docker build -t `${env:DOCKER_IMAGE}` .
+                        docker build -t $env:DOCKER_IMAGE .
                     """
 
                     echo "Pushing Docker image to DockerHub"
                     withDockerRegistry([url: 'https://index.docker.io/v1/', credentialsId: 'docker']) {
                         powershell """
-                            docker push `${env:DOCKER_IMAGE}`
+                            docker push $env:DOCKER_IMAGE
                         """
                     }
                 }
