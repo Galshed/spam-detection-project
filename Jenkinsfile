@@ -8,62 +8,62 @@ pipeline {
 
     stages {
         stage('Checkout') {
-            agent any
+            agent any  // Use any available agent for checkout
             steps {
                 script {
                     echo "Cloning the repository..."
-                    checkout scm
+                    checkout scm  // Use SCM plugin to clone the repo
                 }
             }
         }
 
         stage('Build and Test') {
-            agent any
+            agent any  // Use any available agent for this stage
             steps {
                 script {
                     echo "Running tests in Docker container"
-                    powershell '''
-                        $currentDir = (Get-Location).Path
-                        docker run --rm -v "$currentDir:/app" -w /app $env:DOCKER_IMAGE sh -c "pip install -r requirements.txt && pytest tests/"
-                    '''
+                    powershell """
+                        \$currentDir = (Get-Location).Path
+                        docker run --rm -v `"\$currentDir:/app`" -w /app `${env:DOCKER_IMAGE}` sh -c `"pip install -r requirements.txt && pytest tests/`"
+                    """
                 }
             }
         }
 
         stage('Build Docker Image') {
-            agent any
+            agent any  // Use any available agent for this stage
             steps {
                 script {
                     echo "Building Docker image"
-                    powershell '''
-                        docker build -t $env:DOCKER_IMAGE .
-                    '''
+                    powershell """
+                        docker build -t `${env:DOCKER_IMAGE}` .
+                    """
 
                     echo "Pushing Docker image to DockerHub"
                     withDockerRegistry([url: 'https://index.docker.io/v1/', credentialsId: 'docker']) {
-                        powershell '''
-                            docker push $env:DOCKER_IMAGE
-                        '''
+                        powershell """
+                            docker push `${env:DOCKER_IMAGE}`
+                        """
                     }
                 }
             }
         }
 
         stage('Deploy') {
-            agent any
+            agent any  // Use any available agent for this stage
             steps {
                 script {
                     echo "Deploying to Kubernetes"
-                    powershell '''
+                    powershell """
                         kubectl apply -f k8s/deployment.yaml
                         kubectl apply -f k8s/service.yaml
-                    '''
+                    """
                 }
             }
         }
     }
 
     triggers {
-        githubPush()
+        githubPush()  // This trigger listens for GitHub push events (you need to configure GitHub webhook)
     }
 }
