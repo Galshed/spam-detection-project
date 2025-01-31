@@ -18,9 +18,7 @@ pipeline {
         }
 
         stage('Build and Test') {
-            agent {
-                label 'docker'  // Run this on a node with Docker installed
-            }
+            agent any  // Use any available agent for this stage
             steps {
                 script {
                     echo "Running tests in Docker container"
@@ -30,9 +28,7 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-            agent {
-                label 'docker'  // Run this on a node with Docker installed
-            }
+            agent any  // Use any available agent for this stage
             steps {
                 script {
                     echo "Building Docker image"
@@ -47,9 +43,7 @@ pipeline {
         }
 
         stage('Deploy') {
-            agent {
-                label 'docker'  // Use a node with Docker installed for deployment
-            }
+            agent any  // Use any available agent for this stage
             steps {
                 script {
                     echo "Deploying to Kubernetes"
