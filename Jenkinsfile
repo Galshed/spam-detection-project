@@ -2,8 +2,8 @@ pipeline {
     agent none  // Avoid assigning a global agent
 
     environment {
-        DOCKER_IMAGE = "python:3.9"
-        REGISTRY_CREDENTIALS = credentials('docker')
+        DOCKER_IMAGE = "galshed1107/spam-detection:latest"  // Your DockerHub username
+        REGISTRY_CREDENTIALS = credentials('docker')  // Credentials for DockerHub
     }
 
     stages {
@@ -32,11 +32,11 @@ pipeline {
             steps {
                 script {
                     echo "Building Docker image"
-                    sh 'docker build -t myrepo/spam-detection:latest .'
+                    sh 'docker build -t ${DOCKER_IMAGE} .'
 
-                    echo "Pushing Docker image to registry"
+                    echo "Pushing Docker image to DockerHub"
                     withDockerRegistry([url: 'https://index.docker.io/v1/', credentialsId: 'docker']) {
-                        sh 'docker push myrepo/spam-detection:latest'
+                        sh 'docker push ${DOCKER_IMAGE}'
                     }
                 }
             }
@@ -52,5 +52,10 @@ pipeline {
                 }
             }
         }
+    }
+
+    triggers {
+        // Automatically trigger the build when a change is pushed to the Git repository
+        githubPush()  // This trigger listens for GitHub push events (you need to configure GitHub webhook)
     }
 }
