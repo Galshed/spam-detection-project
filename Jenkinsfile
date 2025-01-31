@@ -8,40 +8,41 @@ pipeline {
 
     stages {
         stage('Checkout') {
-            agent any  // Use any available agent for checkout
+            agent any
             steps {
                 script {
                     echo "Cloning the repository..."
-                    checkout scm  // Use SCM plugin to clone the repo
+                    checkout scm
                 }
             }
         }
 
         stage('Build and Test') {
-            agent any  // Use any available agent for this stage
+            agent any
             steps {
                 script {
                     echo "Running tests in Docker container"
                     powershell '''
-                        docker run --rm -v $PWD:/app -w /app ${DOCKER_IMAGE} sh -c "pip install -r requirements.txt && pytest tests/"
+                        $currentDir = (Get-Location).Path
+                        docker run --rm -v "$currentDir:/app" -w /app $env:DOCKER_IMAGE sh -c "pip install -r requirements.txt && pytest tests/"
                     '''
                 }
             }
         }
 
         stage('Build Docker Image') {
-            agent any  // Use any available agent for this stage
+            agent any
             steps {
                 script {
                     echo "Building Docker image"
                     powershell '''
-                        docker build -t ${DOCKER_IMAGE} .
+                        docker build -t $env:DOCKER_IMAGE .
                     '''
 
                     echo "Pushing Docker image to DockerHub"
                     withDockerRegistry([url: 'https://index.docker.io/v1/', credentialsId: 'docker']) {
                         powershell '''
-                            docker push ${DOCKER_IMAGE}
+                            docker push $env:DOCKER_IMAGE
                         '''
                     }
                 }
@@ -49,7 +50,7 @@ pipeline {
         }
 
         stage('Deploy') {
-            agent any  // Use any available agent for this stage
+            agent any
             steps {
                 script {
                     echo "Deploying to Kubernetes"
@@ -63,7 +64,6 @@ pipeline {
     }
 
     triggers {
-        // Automatically trigger the build when a change is pushed to the Git repository
-        githubPush()  // This trigger listens for GitHub push events (you need to configure GitHub webhook)
+        githubPush()
     }
 }
